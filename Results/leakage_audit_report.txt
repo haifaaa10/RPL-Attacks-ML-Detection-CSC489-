@@ -1,0 +1,552 @@
+======================================================================
+IoT-RPL 2021 — LEAKAGE AUDIT + CLEANING PIPELINE (FINAL)
+======================================================================
+
+======================================================================
+STEP 1 — LOADING ALL 10 RAW FILES
+======================================================================
+  File 0 : 1,048,575 packets  (header from file)
+  File 1 : 1,018,083 packets
+  File 2 : 1,029,330 packets
+  File 3 : 1,033,457 packets
+  File 4 : 1,004,792 packets
+  File 5 : 1,030,516 packets
+  File 6 : 1,020,944 packets
+  File 7 : 1,021,439 packets
+  File 8 : 1,028,643 packets
+  File 9 : 1,006,406 packets
+
+  Total packets  : 10,242,185
+  Total columns  : 24
+  Load time      : 16.9s
+
+  Label distribution (packet-level):
+    Flooding    : 3,579,148
+    Normal      : 2,143,817
+    Blackhole   : 1,811,684
+    Version     : 1,435,204
+    Rank        : 1,272,332
+
+======================================================================
+PHASE 0 — LEAKAGE AUDIT: RAW UNCLEANED DATASET
+======================================================================
+
+  This phase documents the leakage present in the raw IoT-RPL 2021
+  dataset BEFORE any cleaning. The findings here constitute the
+  methodological justification for the cleaning steps that follow.
+
+  Red flags to watch for (per feedback Appendix A):
+    (a) Any column with constant value per class
+    (b) Any column with disjoint ranges across classes
+    (c) Any single feature achieving > 50% depth-4 accuracy (chance = 20%)
+    (d) KS uniformity p > 0.05 within a class (real data is never uniform)
+
+
+======================================================================
+SANITY CHECK — RAW DATASET (BEFORE CLEANING)
+======================================================================
+  Shape    : (10242185, 23)
+  Features : ['from', 'to', 'frame_proto', 'protocol', 'control_type', 'type_cont_messg', 'DOAGID', 'DOAGID.1', 'DOAGID.2', 'DOAGID.3', 'DOAG_info', 'DIO_info', 'object_cont_pt', 'lifetime', 'prefix_info', 'valid_lifetime', 'preferred_liftime', 'reserved', 'desti_prefix', 'desti_prefix.1', 'desti_prefix.2', 'desti_prefix.3']
+  Classes  : ['Blackhole', 'Flooding', 'Normal', 'Rank', 'Version']
+
+--- Layer 1: Per-class value ranges & KS uniformity test ---
+    Constant range (min==max)  -> structural leakage (strongest)
+    Disjoint ranges            -> structural leakage
+    KS p > 0.05                -> uniform distribution (suspicious)
+
+  from:
+    Blackhole   : min=12  max=12  <- RED FLAG (constant)
+    Flooding    : min=13  max=16
+    Normal      : min=1  max=11
+    Rank        : min=14  max=14  <- RED FLAG (constant)
+    Version     : min=15  max=15  <- RED FLAG (constant)
+  to:
+    Blackhole   : min=0  max=10.11
+    Flooding    : min=0  max=11
+    Normal      : min=0  max=15
+    Rank        : min=0  max=11
+    Version     : min=0  max=9
+  frame_proto:
+    Blackhole   : min=0  max=0  <- RED FLAG (constant)
+    Flooding    : min=0  max=0  <- RED FLAG (constant)
+    Normal      : min=0  max=4.001e+07
+    Rank        : min=0  max=0  <- RED FLAG (constant)
+    Version     : min=0  max=0  <- RED FLAG (constant)
+  protocol:
+    Blackhole   : min=0  max=0  <- RED FLAG (constant)
+    Flooding    : min=0  max=0  <- RED FLAG (constant)
+    Normal      : min=0  max=3.4e+38
+    Rank        : min=0  max=0  <- RED FLAG (constant)
+    Version     : min=0  max=0  <- RED FLAG (constant)
+  control_type:
+    Blackhole   : min=0  max=8775
+    Flooding    : min=0  max=8775
+    Normal      : min=0  max=1.633e+07
+    Rank        : min=0  max=8775
+    Version     : min=0  max=8775
+  type_cont_messg:
+    Blackhole   : min=0  max=5688
+    Flooding    : min=0  max=5688
+    Normal      : min=0  max=5688
+    Rank        : min=0  max=5688
+    Version     : min=0  max=5688
+  DOAGID:
+    Blackhole   : min=0  max=3.695e+11
+    Flooding    : min=0  max=3.4e+38
+    Normal      : min=0  max=6.046e+14
+    Rank        : min=0  max=3.4e+38
+    Version     : min=0  max=3.695e+11
+  DOAGID.1:
+    Blackhole   : min=0  max=6.9e+07
+    Flooding    : min=0  max=6.9e+07
+    Normal      : min=0  max=4.003e+14
+    Rank        : min=0  max=6.9e+07
+    Version     : min=0  max=6.9e+07
+  DOAGID.2:
+    Blackhole   : min=0  max=2.83e+07
+    Flooding    : min=0  max=8.49e+07
+    Normal      : min=0  max=1.768e+07
+    Rank        : min=0  max=8.49e+07
+    Version     : min=0  max=7.275e+07
+  DOAGID.3:
+    Blackhole   : min=0  max=2.127e+06
+    Flooding    : min=0  max=2.127e+06
+    Normal      : min=0  max=2.127e+06
+    Rank        : min=0  max=1.111e+07
+    Version     : min=0  max=1.878e+07
+  DOAG_info:
+    Blackhole   : min=0  max=3.4e+38
+    Flooding    : min=0  max=4e+09
+    Normal      : min=0  max=4e+09
+    Rank        : min=0  max=3.4e+38
+    Version     : min=0  max=3.4e+38
+  DIO_info:
+    Blackhole   : min=0  max=5.12e+06
+    Flooding    : min=0  max=5.12e+06
+    Normal      : min=0  max=5.12e+06
+    Rank        : min=0  max=5.12e+06
+    Version     : min=0  max=5.12e+06
+  object_cont_pt:
+    Blackhole   : min=0  max=7.405e+07
+    Flooding    : min=0  max=4e+09
+    Normal      : min=0  max=1e+06
+    Rank        : min=0  max=4e+09
+    Version     : min=0  max=4e+09
+  lifetime:
+    Blackhole   : min=0  max=4.101e+07
+    Flooding    : min=0  max=8.3e+07
+    Normal      : min=0  max=1.001e+07
+    Rank        : min=0  max=3.4e+38
+    Version     : min=0  max=4.101e+07
+  prefix_info:
+    Blackhole   : min=0  max=1.008e+06
+    Flooding    : min=0  max=3.4e+38
+    Normal      : min=0  max=2.127e+06
+    Rank        : min=0  max=3.4e+38
+    Version     : min=0  max=1.008e+06
+  valid_lifetime:
+    Blackhole   : min=0  max=0  <- RED FLAG (constant)
+    Flooding    : min=0  max=1.01e+05
+    Normal      : min=0  max=9.091e+04
+    Rank        : min=0  max=1.01e+05
+    Version     : min=0  max=0  <- RED FLAG (constant)
+  preferred_liftime:
+    Blackhole   : min=0  max=6.04e+06
+    Flooding    : min=0  max=6.04e+06
+    Normal      : min=0  max=6.04e+06
+    Rank        : min=0  max=6.04e+06
+    Version     : min=0  max=6.04e+06
+  reserved:
+    Blackhole   : min=0  max=0  <- RED FLAG (constant)
+    Flooding    : min=0  max=0.11
+    Normal      : min=0  max=0.11
+    Rank        : min=0  max=0  <- RED FLAG (constant)
+    Version     : min=0  max=0  <- RED FLAG (constant)
+  desti_prefix:
+    Blackhole   : min=0  max=0  <- RED FLAG (constant)
+    Flooding    : min=0  max=0.12
+    Normal      : min=0  max=0.12
+    Rank        : min=0  max=0  <- RED FLAG (constant)
+    Version     : min=0  max=0  <- RED FLAG (constant)
+  desti_prefix.1:
+    Blackhole   : min=0  max=0  <- RED FLAG (constant)
+    Flooding    : min=0  max=0.13
+    Normal      : min=0  max=0.13
+    Rank        : min=0  max=0  <- RED FLAG (constant)
+    Version     : min=0  max=0  <- RED FLAG (constant)
+  desti_prefix.2:
+    Blackhole   : min=0  max=0  <- RED FLAG (constant)
+    Flooding    : min=0  max=0.14
+    Normal      : min=0  max=0.14
+    Rank        : min=0  max=0  <- RED FLAG (constant)
+    Version     : min=0  max=0  <- RED FLAG (constant)
+  desti_prefix.3:
+    Blackhole   : min=0  max=0  <- RED FLAG (constant)
+    Flooding    : min=0  max=0.15
+    Normal      : min=0  max=0.15
+    Rank        : min=0  max=0  <- RED FLAG (constant)
+    Version     : min=0  max=0  <- RED FLAG (constant)
+
+--- Layer 2: Single-feature depth-4 accuracy (3-fold CV) ---
+    Chance level = 0.20 for 5 classes
+    > 0.50 + constant/disjoint = RED FLAG (leakage)
+    > 0.50 + overlapping       = real signal (keep)
+
+  from                  : acc = 1.000  <- RED FLAG (leakage)
+  to                    : acc = 0.420
+  frame_proto           : acc = 0.353
+  protocol              : acc = 0.350
+  control_type          : acc = 0.357
+  type_cont_messg       : acc = 0.354
+  DOAGID                : acc = 0.353
+  DOAGID.1              : acc = 0.352
+  DOAGID.2              : acc = 0.450
+  DOAGID.3              : acc = 0.475
+  DOAG_info             : acc = 0.480
+  DIO_info              : acc = 0.376
+  object_cont_pt        : acc = 0.451
+  lifetime              : acc = 0.351
+  prefix_info           : acc = 0.374
+  valid_lifetime        : acc = 0.369
+  preferred_liftime     : acc = 0.375
+  reserved              : acc = 0.349
+  desti_prefix          : acc = 0.349
+  desti_prefix.1        : acc = 0.349
+  desti_prefix.2        : acc = 0.349
+  desti_prefix.3        : acc = 0.349
+
+======================================================================
+  RESULT  : 29 red flag(s)
+  LEAKY   : ['from', 'frame_proto', 'protocol', 'valid_lifetime', 'reserved', 'desti_prefix', 'desti_prefix.1', 'desti_prefix.2', 'desti_prefix.3']
+  SIGNAL  : []
+======================================================================
+
+  AUDIT SUMMARY:
+  Total red flags        : 29
+  Leaky columns          : 9
+  Columns with signal    : 0
+  Total features checked : 22
+
+  NOTE: The 'from' column (node ID) achieves acc=1.0 with a single
+  depth-4 tree — equivalent to a direct label lookup by node identity.
+  This is not attack detection; it is node recognition.
+
+======================================================================
+PHASE 1, STEP 1 — DROP IDENTIFIER + HEX COLUMNS
+======================================================================
+  Identifier/leaky cols dropped (10):
+    from
+    to
+    frame_proto
+    protocol
+    valid_lifetime
+    reserved
+    desti_prefix
+    desti_prefix.1
+    desti_prefix.2
+    desti_prefix.3
+  Hex-string cols dropped (4):
+    DOAGID
+    DOAG_info
+    lifetime
+    prefix_info
+
+  Shape after drop : (10242185, 10)
+  Remaining cols   : ['control_type', 'type_cont_messg', 'DOAGID.1', 'DOAGID.2', 'DOAGID.3', 'DIO_info', 'object_cont_pt', 'preferred_liftime', 'label']
+
+======================================================================
+PHASE 1, STEP 2 — COERCE TO NUMERIC, CAP OVERFLOW, FILL NaN
+======================================================================
+  control_type          : orig=object   | NaN filled=9,889,651  | overflow capped=0
+  type_cont_messg       : orig=object   | NaN filled=6,882,509  | overflow capped=0
+  DOAGID.1              : orig=object   | NaN filled=1,921,162  | overflow capped=0
+  DOAGID.2              : orig=object   | NaN filled=181,701  | overflow capped=0
+  DOAGID.3              : orig=object   | NaN filled=127,144  | overflow capped=0
+  DIO_info              : orig=object   | NaN filled=5,062,965  | overflow capped=0
+  object_cont_pt        : orig=object   | NaN filled=1,927,073  | overflow capped=0
+  preferred_liftime     : orig=object   | NaN filled=89,700  | overflow capped=0
+
+======================================================================
+PHASE 2 — SANITY CHECK #1: AFTER INITIAL CLEANING
+======================================================================
+
+======================================================================
+SANITY CHECK #1 — POST-CLEANING
+======================================================================
+  Shape    : (10242185, 9)
+  Features : ['control_type', 'type_cont_messg', 'DOAGID.1', 'DOAGID.2', 'DOAGID.3', 'DIO_info', 'object_cont_pt', 'preferred_liftime']
+  Classes  : ['Blackhole', 'Flooding', 'Normal', 'Rank', 'Version']
+
+--- Layer 1: Per-class value ranges & KS uniformity test ---
+    Constant range (min==max)  -> structural leakage (strongest)
+    Disjoint ranges            -> structural leakage
+    KS p > 0.05                -> uniform distribution (suspicious)
+
+  control_type:
+    Blackhole   : min=0  max=8775
+    Flooding    : min=0  max=8775
+    Normal      : min=0  max=1.633e+07
+    Rank        : min=0  max=8775
+    Version     : min=0  max=8775
+  type_cont_messg:
+    Blackhole   : min=0  max=5688
+    Flooding    : min=0  max=5688
+    Normal      : min=0  max=5688
+    Rank        : min=0  max=5688
+    Version     : min=0  max=5688
+  DOAGID.1:
+    Blackhole   : min=0  max=6.9e+07
+    Flooding    : min=0  max=6.9e+07
+    Normal      : min=0  max=4.003e+14
+    Rank        : min=0  max=6.9e+07
+    Version     : min=0  max=6.9e+07
+  DOAGID.2:
+    Blackhole   : min=0  max=2.83e+07
+    Flooding    : min=0  max=8.49e+07
+    Normal      : min=0  max=1.768e+07
+    Rank        : min=0  max=8.49e+07
+    Version     : min=0  max=7.275e+07
+  DOAGID.3:
+    Blackhole   : min=0  max=2.127e+06
+    Flooding    : min=0  max=2.127e+06
+    Normal      : min=0  max=2.127e+06
+    Rank        : min=0  max=1.111e+07
+    Version     : min=0  max=1.878e+07
+  DIO_info:
+    Blackhole   : min=0  max=5.12e+06
+    Flooding    : min=0  max=5.12e+06
+    Normal      : min=0  max=5.12e+06
+    Rank        : min=0  max=5.12e+06
+    Version     : min=0  max=5.12e+06
+  object_cont_pt:
+    Blackhole   : min=0  max=7.405e+07
+    Flooding    : min=0  max=4e+09
+    Normal      : min=0  max=1e+06
+    Rank        : min=0  max=4e+09
+    Version     : min=0  max=4e+09
+  preferred_liftime:
+    Blackhole   : min=0  max=6.04e+06
+    Flooding    : min=0  max=6.04e+06
+    Normal      : min=0  max=6.04e+06
+    Rank        : min=0  max=6.04e+06
+    Version     : min=0  max=6.04e+06
+
+--- Layer 2: Single-feature depth-4 accuracy (3-fold CV) ---
+    Chance level = 0.20 for 5 classes
+    > 0.50 + constant/disjoint = RED FLAG (leakage)
+    > 0.50 + overlapping       = real signal (keep)
+
+  control_type          : acc = 0.357
+  type_cont_messg       : acc = 0.354
+  DOAGID.1              : acc = 0.352
+  DOAGID.2              : acc = 0.450
+  DOAGID.3              : acc = 0.475
+  DIO_info              : acc = 0.376
+  object_cont_pt        : acc = 0.451
+  preferred_liftime     : acc = 0.375
+
+======================================================================
+  RESULT  : 0 red flag(s)
+  LEAKY   : []
+  SIGNAL  : []
+======================================================================
+
+======================================================================
+PHASE 2 — DROP REMAINING LEAKY FEATURES (if any)
+======================================================================
+  Nothing to drop — all remaining features are clean.
+
+======================================================================
+PHASE 2 — SANITY CHECK #2: FINAL CONFIRMATION
+======================================================================
+
+======================================================================
+SANITY CHECK #2 — FINAL CLEAN DATASET
+======================================================================
+  Shape    : (10242185, 9)
+  Features : ['control_type', 'type_cont_messg', 'DOAGID.1', 'DOAGID.2', 'DOAGID.3', 'DIO_info', 'object_cont_pt', 'preferred_liftime']
+  Classes  : ['Blackhole', 'Flooding', 'Normal', 'Rank', 'Version']
+
+--- Layer 1: Per-class value ranges & KS uniformity test ---
+    Constant range (min==max)  -> structural leakage (strongest)
+    Disjoint ranges            -> structural leakage
+    KS p > 0.05                -> uniform distribution (suspicious)
+
+  control_type:
+    Blackhole   : min=0  max=8775
+    Flooding    : min=0  max=8775
+    Normal      : min=0  max=1.633e+07
+    Rank        : min=0  max=8775
+    Version     : min=0  max=8775
+  type_cont_messg:
+    Blackhole   : min=0  max=5688
+    Flooding    : min=0  max=5688
+    Normal      : min=0  max=5688
+    Rank        : min=0  max=5688
+    Version     : min=0  max=5688
+  DOAGID.1:
+    Blackhole   : min=0  max=6.9e+07
+    Flooding    : min=0  max=6.9e+07
+    Normal      : min=0  max=4.003e+14
+    Rank        : min=0  max=6.9e+07
+    Version     : min=0  max=6.9e+07
+  DOAGID.2:
+    Blackhole   : min=0  max=2.83e+07
+    Flooding    : min=0  max=8.49e+07
+    Normal      : min=0  max=1.768e+07
+    Rank        : min=0  max=8.49e+07
+    Version     : min=0  max=7.275e+07
+  DOAGID.3:
+    Blackhole   : min=0  max=2.127e+06
+    Flooding    : min=0  max=2.127e+06
+    Normal      : min=0  max=2.127e+06
+    Rank        : min=0  max=1.111e+07
+    Version     : min=0  max=1.878e+07
+  DIO_info:
+    Blackhole   : min=0  max=5.12e+06
+    Flooding    : min=0  max=5.12e+06
+    Normal      : min=0  max=5.12e+06
+    Rank        : min=0  max=5.12e+06
+    Version     : min=0  max=5.12e+06
+  object_cont_pt:
+    Blackhole   : min=0  max=7.405e+07
+    Flooding    : min=0  max=4e+09
+    Normal      : min=0  max=1e+06
+    Rank        : min=0  max=4e+09
+    Version     : min=0  max=4e+09
+  preferred_liftime:
+    Blackhole   : min=0  max=6.04e+06
+    Flooding    : min=0  max=6.04e+06
+    Normal      : min=0  max=6.04e+06
+    Rank        : min=0  max=6.04e+06
+    Version     : min=0  max=6.04e+06
+
+--- Layer 2: Single-feature depth-4 accuracy (3-fold CV) ---
+    Chance level = 0.20 for 5 classes
+    > 0.50 + constant/disjoint = RED FLAG (leakage)
+    > 0.50 + overlapping       = real signal (keep)
+
+  control_type          : acc = 0.357
+  type_cont_messg       : acc = 0.354
+  DOAGID.1              : acc = 0.352
+  DOAGID.2              : acc = 0.450
+  DOAGID.3              : acc = 0.475
+  DIO_info              : acc = 0.376
+  object_cont_pt        : acc = 0.451
+  preferred_liftime     : acc = 0.375
+
+======================================================================
+  RESULT  : 0 red flag(s)
+  LEAKY   : []
+  SIGNAL  : []
+======================================================================
+
+  ✓ Dataset is clean — 0 red flags. Ready for modeling.
+
+======================================================================
+BEFORE / AFTER LEAKAGE AUDIT REPORT
+(Suitable for inclusion in methodology section)
+======================================================================
+
+  SUMMARY
+  -------
+  Raw dataset red flags   : 29
+  Clean dataset red flags : 0
+  Columns removed         : 15
+  Columns retained        : 8
+
+  COLUMNS REMOVED AND WHY
+  ------------------------------------------------------------
+  from                  : Node ID — acc=1.0 single-feature (direct label lookup)
+  to                    : Destination ID — identifier column
+  frame_proto           : Constant=0 for all attack classes; strings in Normal
+  protocol              : Constant=0 for all attack classes; strings in Normal
+  valid_lifetime        : Constant=0 for Blackhole, Rank, Version classes
+  reserved              : Constant=0 for Blackhole, Rank, Version classes
+  desti_prefix          : Constant=0 for Blackhole, Rank, Version classes
+  desti_prefix.1        : Constant=0 for Blackhole, Rank, Version classes
+  desti_prefix.2        : Constant=0 for Blackhole, Rank, Version classes
+  desti_prefix.3        : Constant=0 for Blackhole, Rank, Version classes
+  DOAGID                : 57.7% hex strings (e.g. '1E4000F1'); 98.7% zeros after coerce
+  DOAG_info             : Hex strings; extreme values up to 4.7e+104 from hex misparse
+  lifetime              : 49.6% hex strings; 99.3% zeros after coercion
+  prefix_info           : 12.4% hex strings; 91.3% zeros after coercion
+  file_id               : Metadata column (simulation file index), not a feature
+
+  RETAINED FEATURES AND THEIR STATUS
+  ------------------------------------------------------------
+  Feature                 Layer2 Acc    Status
+  -------                 ----------    ------
+  control_type            0.357         OK
+  type_cont_messg         0.354         OK
+  DOAGID.1                0.352         OK
+  DOAGID.2                0.45          OK
+  DOAGID.3                0.475         OK
+  DIO_info                0.376         OK
+  object_cont_pt          0.451         OK
+  preferred_liftime       0.375         OK
+
+  INTERPRETATION
+  --------------
+  All retained features have overlapping value ranges across the five
+  attack classes (Normal, Flooding, Blackhole, Rank, Version). No single
+  feature achieves accuracy above 0.50 with a depth-4 decision tree,
+  consistent with a chance level of 0.20 for a 5-class problem. This
+  confirms that the remaining features carry genuine discriminative signal
+  rather than class-encoded range artifacts.
+
+  The 'from' column (node ID) was the strongest leakage source: a single
+  depth-4 tree on node ID alone achieves acc=1.000. This is because each
+  attack type was generated by a fixed set of nodes across all 10 simulation
+  files. The model would learn node identity, not attack behaviour.
+
+  TRAIN/TEST SPLIT RATIONALE
+  --------------------------
+  Files 0–7 are used for training (~8.2M packets, 80% of simulations).
+  Files 8–9 are held out for testing (~2.0M packets, 20% of simulations).
+  This file-based split is used instead of random cross-validation because
+  the same physical node appears in all 10 files. Random folds would allow
+  node behavioral fingerprints to leak across train/test boundaries.
+
+
+======================================================================
+TRAIN/TEST SPLIT — FILES 0-7 TRAIN, FILES 8-9 TEST
+======================================================================
+  Train (files 0-7): 8,207,136 rows
+  Test  (files 8-9): 2,035,049 rows
+
+  Train label distribution:
+    Flooding    : 2,861,729
+    Normal      : 1,713,832
+    Blackhole   : 1,454,839
+    Version     : 1,153,853
+    Rank        : 1,022,883
+
+  Test label distribution:
+    Flooding    : 717,419
+    Normal      : 429,985
+    Blackhole   : 356,845
+    Version     : 281,351
+    Rank        : 249,449
+
+  Class balance check (test/train ratio — expected ~0.25):
+    Blackhole   : ratio = 0.245
+    Flooding    : ratio = 0.251
+    Normal      : ratio = 0.251
+    Rank        : ratio = 0.244
+    Version     : ratio = 0.244
+
+  Saving outputs...
+  Saved : iot_rpl_clean_full.csv  — (10242185, 9)
+  Saved : iot_rpl_train.csv       — (8207136, 9)
+  Saved : iot_rpl_test.csv        — (2035049, 9)
+
+  Final features (8):
+    control_type
+    type_cont_messg
+    DOAGID.1
+    DOAGID.2
+    DOAGID.3
+    DIO_info
+    object_cont_pt
+    preferred_liftime
